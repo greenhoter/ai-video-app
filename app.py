@@ -1,7 +1,6 @@
 import streamlit as st
 import fal_client
 import os
-import io
 
 # إعدادات الصفحة الأساسية للتطبيق
 st.set_page_config(page_title="مُولد الفيديوهات بالذكاء الاصطناعي", page_icon="🎬", layout="centered")
@@ -15,7 +14,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🎬 تحويل الصور والنصوص إلى فيديو")
-st.write("ارفع صورتك واكتب الوصف (البرومت) لتحويلها إلى فيديو رائع خلال ثوانٍ معدودة!")
+st.write("ضع رابط صورتك واكتب الوصف (البرومت) لتحويلها إلى فيديو رائع فوراً!")
 
 # صندوق إدخال الـ API Key الخاص بالمستخدم لحماية خصوصيتك
 api_key = st.text_input("أدخل مفتاح Fal.ai API الخاص بك أولاً:", type="password")
@@ -24,13 +23,13 @@ if api_key:
     # تفعيل المفتاح في خلفية النظام
     os.environ["FAL_KEY"] = api_key
 
-    # نموذج رفع الصورة
-    uploaded_file = st.file_uploader("اختر صورة للبدء (اختياري):", type=["jpg", "jpeg", "png"])
-    if uploaded_file:
-        st.image(uploaded_file, caption="الصورة المرفوعة", width=300)
+    # استخدام صندوق نصي لوضع رابط الصورة لتجنب مشاكل التشفير تماماً
+    image_url = st.text_input("أدخل رابط الصورة (URL) التي تريد تحريكها (اختياري):")
+    if image_url:
+        st.image(image_url, caption="الصورة التي تم اختيارها", width=300)
 
     # صندوق كتابة البرومت (النص الوصفي)
-    prompt = st.text_area("اكتب الوصف (مثال: طائر يطير في الغابة وقت الغروب، حركة واقعية سينمائية):")
+    prompt = st.text_area("اكتب الوصف (البرومت) بالإنجليزية:")
 
     # زر توليد الفيديو
     if st.button("🚀 ابدأ توليد الفيديو الآن"):
@@ -39,12 +38,6 @@ if api_key:
         else:
             with st.spinner("⏳ جارٍ توليد الفيديو على السيرفرات السحابية... قد يستغرق الأمر دقيقة."):
                 try:
-                    image_url = None
-                    if uploaded_file:
-                        # تحويل الصورة إلى ملف ذاكرة مؤقت متوافق مع جميع أنواع التشفير والسيرفرات
-                        file_bytes = uploaded_file.getvalue()
-                        image_url = fal_client.upload_file(file_bytes, content_type=uploaded_file.type, file_name=uploaded_file.name)
-
                     # إعداد المدخلات لنموذج لونا (Luma Dream Machine)
                     arguments = {
                         "prompt": prompt,
@@ -68,5 +61,6 @@ if api_key:
                     st.error(f"عذراً، حدث خطأ أثناء التوليد: {str(e)}")
 else:
     st.info("الرجاء إدخال الـ API Key في الصندوق أعلاه لتتمكن من استخدام التطبيق.")
+
 
 
