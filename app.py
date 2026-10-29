@@ -1,5 +1,6 @@
 
 import os
+import base64
 import streamlit as st
 import fal_client
 
@@ -23,15 +24,15 @@ h1 {
 """, unsafe_allow_html=True)
 
 st.title("🎬 تحويل الصور إلى فيديو")
-st.write("ارفع صورة، واكتب وصف الحركة التي تريدها.")
+st.write("ارفع صورة واكتب وصف الحركة التي تريدها.")
 
 api_key = st.text_input(
-    "أدخل مفتاح Fal.ai API:",
+    "مفتاح Fal.ai API",
     type="password"
 ).strip()
 
 uploaded_file = st.file_uploader(
-    "اختر صورة (اختياري)",
+    "اختر صورة",
     type=["jpg", "jpeg", "png"]
 )
 
@@ -39,87 +40,86 @@ if uploaded_file:
     st.image(uploaded_file, caption="الصورة الأصلية", width=300)
 
 prompt = st.text_area(
-    "اكتب وصف الفيديو بالإنجليزية:",
+    "وصف الفيديو بالإنجليزية",
     placeholder="Describe the motion you want..."
+)
+
+model = st.selectbox(
+    "نموذج توليد الفيديو",
+    ["fal-ai/luma-dream-machine"]
 )
 
 if st.button("🚀 ابدأ توليد الفيديو", type="primary"):
 
     if not api_key:
-        st.warning("أدخل مفتاح API صالحاً أولاً.")
+        st.warning("أدخل مفتاح API أولاً.")
 
     elif not prompt.strip():
         st.warning("اكتب وصف الفيديو أولاً.")
 
+    elif uploaded_file is None:
+        st.warning("ارفع صورة أولاً.")
+
     else:
+        os.environ["FAL_KEY"] = api_key
+
         try:
-            # تعيين المفتاح قبل الاتصال بخدمة Fal.ai
-            os.environ["FAL_KEY"] = api_key
+            file_data = uploaded_file.getvalue()
+            mime_type = uploaded_file.type
+
+            encoded = base64.b64encode(
+                file_data
+            ).decode("utf-8")
+
+            image_url = (
+                f"data:{mime_type};base64,{encoded}"
+            )
 
             arguments = {
-                "prompt": prompt.strip()
+                "prompt": prompt.strip(),
+                "image_url": image_url
             }
 
-            with st.spinner("جارٍ تجهيز الطلب..."):
-
-                if uploaded_file is not None:
-                    file_data = uploaded_file.getvalue()
-
-                    image_url = fal_client.upload(
-                        file_data,
-                        uploaded_file.type,
-                        file_name=uploaded_file.name
-                    )
-
-                    arguments["image_url"] = image_url
-
-            with st.spinner(
-                "جارٍ توليد الفيديو... قد يستغرق الأمر بعض الوقت."
-            ):
+            with st.spinner("جارٍ إرسال طلب توليد الفيديو..."):
                 result = fal_client.subscribe(
-                    "fal-ai/luma-dream-machine",
+                    model,
                     arguments=arguments
                 )
 
-            video_data = result.get("video", {})
+            video = result.get("video", {})
             video_url = (
-                video_data.get("url")
-                if isinstance(video_data, dict)
+                video.get("url")
+                if isinstance(video, dict)
                 else None
             )
 
             if video_url:
-                st.success("تم إنشاء الفيديو بنجاح!")
+                st.success("تم توليد الفيديو!")
                 st.video(video_url)
                 st.markdown(
-                    f"[📥 فتح الفيديو وتحميله]({video_url})"
+                    f"[📥 فتح الفيديو]({video_url})"
                 )
             else:
                 st.error(
-                    "انتهى الطلب، لكن لم يُعثر على رابط الفيديو "
-                    "في النتيجة."
+                    "لم يُعثر على رابط الفيديو في النتيجة."
                 )
                 st.json(result)
 
         except Exception as e:
-            error_text = str(e)
-            st.error("تعذر إكمال عملية توليد الفيديو.")
+            error = str(e)
 
-            if "403" in error_text or "Forbidden" in error_text:
+            st.error("تعذر إنشاء الفيديو.")
+            st.code(error[:2000])
+
+            if "403" in error or "Forbidden" in error:
                 st.warning(
-                    "رفضت Fal.ai الطلب. تحقق من صلاحية مفتاح API "
-                    "ومن إمكانية الوصول إلى خدمة رفع الملفات."
+                    "الخادم رفض الطلب. قد تكون المشكلة "
+                    "في صلاحيات الحساب أو التخزين أو النموذج."
                 )
-            elif "401" in error_text or "Unauthorized" in error_text:
+
+            elif "401" in error or "Unauthorized" in error:
                 st.warning(
-                    "فشل التحقق من الهوية. تحقق من صحة مفتاح API."
+                    "تعذرت المصادقة. تحقق من مفتاح API."
                 )
-            else:
-                st.code(error_text[:1500])
-
-else:
-    st.info("أدخل مفتاح API، ثم اكتب وصف الفيديو.")
-
-
 
 
