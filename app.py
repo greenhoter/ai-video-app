@@ -45,9 +45,7 @@ if api_key:
 
                     # إعداد المدخلات لنموذج لونا (Luma Dream Machine) القوي بالفيديو
                     arguments = {
-                        "prompt": prompt,streamlit
-fal-client
-
+                        "prompt": prompt,
                     }
                     if image_url:
                         arguments["image_url"] = image_url
