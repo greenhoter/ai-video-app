@@ -1,11 +1,12 @@
 import streamlit as st
 import fal_client
 import os
+import io
 
 # إعدادات الصفحة الأساسية للتطبيق
 st.set_page_config(page_title="مُولد الفيديوهات بالذكاء الاصطناعي", page_icon="🎬", layout="centered")
 
-# تغيير اتجاه الصفحة للعربية (من اليمين إلى RTL) وعنوان جذاب
+# تغيير اتجاه الصفحة للعربية وعنوان جذاب
 st.markdown("""
     <style>
     .reportview-container .main .block-container { direction: RTL; text-align: right; }
@@ -40,9 +41,9 @@ if api_key:
                 try:
                     image_url = None
                     if uploaded_file:
-                        # قراءة محتوى الملف المرفوع وإرساله بالشكل الصحيح المتوافق مع التحديث
-                        file_bytes = uploaded_file.read()
-                        image_url = fal_client.upload_file(file_bytes)
+                        # تحويل الصورة إلى ملف ذاكرة مؤقت متوافق مع جميع أنواع التشفير والسيرفرات
+                        file_bytes = uploaded_file.getvalue()
+                        image_url = fal_client.upload_file(file_bytes, content_type=uploaded_file.type, file_name=uploaded_file.name)
 
                     # إعداد المدخلات لنموذج لونا (Luma Dream Machine)
                     arguments = {
@@ -67,4 +68,5 @@ if api_key:
                     st.error(f"عذراً، حدث خطأ أثناء التوليد: {str(e)}")
 else:
     st.info("الرجاء إدخال الـ API Key في الصندوق أعلاه لتتمكن من استخدام التطبيق.")
+
 
