@@ -40,9 +40,9 @@ if api_key:
                 try:
                     image_url = None
                     if uploaded_file:
-                        # قراءة محتوى الملف المرفوع كـ bytes وإرساله للسيرفر بالشكل الصحيح
+                        # قراءة محتوى الملف المرفوع وإرساله بالشكل الصحيح المتوافق مع التحديث
                         file_bytes = uploaded_file.read()
-                        image_url = fal_client.upload_file(file_bytes, content_type=uploaded_file.type)
+                        image_url = fal_client.upload_file(file_bytes)
 
                     # إعداد المدخلات لنموذج لونا (Luma Dream Machine)
                     arguments = {
@@ -66,5 +66,5 @@ if api_key:
                 except Exception as e:
                     st.error(f"عذراً، حدث خطأ أثناء التوليد: {str(e)}")
 else:
-    st.info("الرجاء إدخل الـ API Key في الصندوق أعلاه لتتمكن من استخدام التطبيق.")
+    st.info("الرجاء إدخال الـ API Key في الصندوق أعلاه لتتمكن من استخدام التطبيق.")
 
