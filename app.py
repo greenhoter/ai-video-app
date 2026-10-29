@@ -5,7 +5,7 @@ import os
 # إعدادات الصفحة الأساسية للتطبيق
 st.set_page_config(page_title="مُولد الفيديوهات بالذكاء الاصطناعي", page_icon="🎬", layout="centered")
 
-# تغيير اتجاه الصفحة للعربية (من اليمين إلى اليسار) وعنوان جذاب
+# تغيير اتجاه الصفحة للعربية (من اليمين إلى RTL) وعنوان جذاب
 st.markdown("""
     <style>
     .reportview-container .main .block-container { direction: RTL; text-align: right; }
@@ -38,12 +38,13 @@ if api_key:
         else:
             with st.spinner("⏳ جارٍ توليد الفيديو على السيرفرات السحابية... قد يستغرق الأمر دقيقة."):
                 try:
-                    # رفع الصورة مؤقتاً لسيرفر fal إذا كانت موجودة
                     image_url = None
                     if uploaded_file:
-                        image_url = fal_client.upload_file(uploaded_file)
+                        # قراءة محتوى الملف المرفوع كـ bytes وإرساله للسيرفر بالشكل الصحيح
+                        file_bytes = uploaded_file.read()
+                        image_url = fal_client.upload_file(file_bytes, content_type=uploaded_file.type)
 
-                    # إعداد المدخلات لنموذج لونا (Luma Dream Machine) القوي بالفيديو
+                    # إعداد المدخلات لنموذج لونا (Luma Dream Machine)
                     arguments = {
                         "prompt": prompt,
                     }
@@ -51,7 +52,6 @@ if api_key:
                         arguments["image_url"] = image_url
 
                     # إرسال الطلب للسيرفر وتوليد الفيديو
-                    # نستخدم هنا نموذج Luma الشهير والمتوفر على fal
                     handler = fal_client.submit("fal-ai/luma-dream-machine", arguments=arguments)
                     result = handler.get()
 
@@ -66,4 +66,5 @@ if api_key:
                 except Exception as e:
                     st.error(f"عذراً، حدث خطأ أثناء التوليد: {str(e)}")
 else:
-    st.info("الرجاء إدخال الـ API Key في الصندوق أعلاه لتتمكن من استخدام التطبيق.")
+    st.info("الرجاء إدخل الـ API Key في الصندوق أعلاه لتتمكن من استخدام التطبيق.")
+
