@@ -14,7 +14,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🎬 تحويل الصور والنصوص إلى فيديو")
-st.write("ضع رابط صورتك واكتب الوصف (البرومت) لتحويلها إلى فيديو رائع فوراً!")
+st.write("ارفع صورتك واكتب الوصف (البرومت) لتحويلها إلى فيديو رائع فوراً!")
 
 # صندوق إدخال الـ API Key الخاص بالمستخدم لحماية خصوصيتك
 api_key = st.text_input("أدخل مفتاح Fal.ai API الخاص بك أولاً:", type="password")
@@ -23,10 +23,10 @@ if api_key:
     # تفعيل المفتاح في خلفية النظام
     os.environ["FAL_KEY"] = api_key
 
-    # استخدام صندوق نصي لوضع رابط الصورة لتجنب مشاكل التشفير تماماً
-    image_url = st.text_input("أدخل رابط الصورة (URL) التي تريد تحريكها (اختياري):")
-    if image_url:
-        st.image(image_url, caption="الصورة التي تم اختيارها", width=300)
+    # إعادة ميزة رفع الصورة المباشرة من الجهاز
+    uploaded_file = st.file_uploader("اختر صورة للبدء (اختياري):", type=["jpg", "jpeg", "png"])
+    if uploaded_file:
+        st.image(uploaded_file, caption="الصورة المرفوعة", width=300)
 
     # صندوق كتابة البرومت (النص الوصفي)
     prompt = st.text_area("اكتب الوصف (البرومت) بالإنجليزية:")
@@ -38,6 +38,12 @@ if api_key:
         else:
             with st.spinner("⏳ جارٍ توليد الفيديو على السيرفرات السحابية... قد يستغرق الأمر دقيقة."):
                 try:
+                    image_url = None
+                    if uploaded_file:
+                        # الطريقة الحديثة والمضمونة لرفع الملفات كـ Bytes مباشرة للسيرفر السحابي
+                        file_data = uploaded_file.getvalue()
+                        image_url = fal_client.upload(file_data, content_type=uploaded_file.type)
+
                     # إعداد المدخلات لنموذج لونا (Luma Dream Machine)
                     arguments = {
                         "prompt": prompt,
